@@ -3,8 +3,8 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const mysql = require('@tidbcloud/serverless');
 
-const pool = mysql.createPool({
-  url: process.env.TIDB_URL,
+const client = connect({
+  url: process.env.TIDB_URL // full secure connection string
 });
 const app = express();
 const PORT = 3000; // Ensure this matches the port in your Frontend Settings
@@ -188,3 +188,4 @@ app.listen(PORT, () => {
     console.log(`Yuvan Hostel API running on port ${PORT}`);
 
 });
+
