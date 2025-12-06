@@ -15,8 +15,16 @@ app.use(bodyParser.json());
 
 // Helper for consistent DB usage
 async function dbQuery(sql, params = []) {
+
+  try{
     const result = await client.execute(sql, params);
+   console.log("testing", result);
+  console.log("testing", result.rows);
     return result.rows;
+  } catch (err) {
+    console.error("DB query error:", err);
+    throw err;
+  }
 }
 
 // Helper to format DB rows to Frontend CamelCase
@@ -196,6 +204,7 @@ app.listen(PORT, () => {
     console.log(`Yuvan Hostel API running on port ${PORT}`);
 
 });
+
 
 
 
