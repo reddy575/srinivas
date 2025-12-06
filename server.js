@@ -13,7 +13,11 @@ const PORT = 3000; // Ensure this matches the port in your Frontend Settings
 app.use(cors());
 app.use(bodyParser.json());
 
-
+// Helper for consistent DB usage
+async function dbQuery(sql, params = []) {
+    const result = await client.execute(sql, params);
+    return result.rows;
+}
 
 // Helper to format DB rows to Frontend CamelCase
 const toCamel = (row) => {
@@ -31,7 +35,7 @@ const toCamel = (row) => {
 app.post('/api/auth/login', async (req, res) => {
     const { username, password } = req.body;
     try {
-        const [rows] = await client.execute('SELECT * FROM users WHERE username = ? AND password = ?', [username, password]);
+        const [rows] = await dbQuery('SELECT * FROM users WHERE username = ? AND password = ?', [username, password]);
         if (rows.length > 0) {
             const user = rows[0];
             res.json({ username: user.username, role: user.role });
@@ -46,7 +50,7 @@ app.post('/api/auth/login', async (req, res) => {
 // 2. Hostels
 app.get('/api/hostels', async (req, res) => {
     try {
-        const [rows] = await client.execute('SELECT * FROM hostels');
+        const [rows] = await dbQuery('SELECT * FROM hostels');
         res.json(rows);
     } catch (err) { res.status(500).json(err); }
 });
@@ -54,7 +58,7 @@ app.get('/api/hostels', async (req, res) => {
 app.post('/api/hostels', async (req, res) => {
     const { name, address } = req.body;
     try {
-        const [result] = await client.execute('INSERT INTO hostels (name, address) VALUES (?, ?)', [name, address]);
+        const [result] = await dbQuery('INSERT INTO hostels (name, address) VALUES (?, ?)', [name, address]);
         res.json({ id: result.insertId, name, address });
     } catch (err) { res.status(500).json(err); }
 });
@@ -62,7 +66,7 @@ app.post('/api/hostels', async (req, res) => {
 app.put('/api/hostels/:id', async (req, res) => {
     const { name, address } = req.body;
     try {
-        await client.execute('UPDATE hostels SET name = ?, address = ? WHERE id = ?', [name, address, req.params.id]);
+        await dbQuery('UPDATE hostels SET name = ?, address = ? WHERE id = ?', [name, address, req.params.id]);
         res.json({ id: req.params.id, name, address });
     } catch (err) { res.status(500).json(err); }
 });
@@ -71,7 +75,7 @@ app.put('/api/hostels/:id', async (req, res) => {
 app.get('/api/tenants', async (req, res) => {
     const { hostelId } = req.query;
     try {
-        const [rows] = await client.execute(`
+        const [rows] = await dbQuery(`
             SELECT id, hostel_id, name, room_number, phone_number, email, aadhar_number, 
             address, rent_amount, is_paid, collected_by, DATE_FORMAT(join_date, '%Y-%m-%d') as join_date 
             FROM tenants WHERE hostel_id = ?`, [hostelId]);
@@ -82,7 +86,7 @@ app.get('/api/tenants', async (req, res) => {
 app.post('/api/tenants', async (req, res) => {
     const t = req.body;
     try {
-        const [result] = await client.execute(`
+        const [result] = await dbQuery(`
             INSERT INTO tenants (hostel_id, name, room_number, phone_number, email, aadhar_number, address, rent_amount, is_paid, join_date)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
             [t.hostelId, t.name, t.roomNumber, t.phoneNumber, t.email, t.aadharNumber, t.address, t.rentAmount, false, t.joinDate]
@@ -96,9 +100,9 @@ app.put('/api/tenants/:id', async (req, res) => {
     try {
         // Handle dynamic updates based on what's passed
         if (t.isPaid !== undefined) {
-             await client.execute('UPDATE tenants SET is_paid = ?, collected_by = ? WHERE id = ?', [t.isPaid, t.collectedBy, req.params.id]);
+             await dbQuery('UPDATE tenants SET is_paid = ?, collected_by = ? WHERE id = ?', [t.isPaid, t.collectedBy, req.params.id]);
         } else {
-             await client.execute(`
+             await dbQuery(`
                 UPDATE tenants SET name=?, room_number=?, phone_number=?, email=?, aadhar_number=?, address=?, rent_amount=? 
                 WHERE id=?`, 
                 [t.name, t.roomNumber, t.phoneNumber, t.email, t.aadharNumber, t.address, t.rentAmount, req.params.id]);
@@ -109,7 +113,7 @@ app.put('/api/tenants/:id', async (req, res) => {
 
 app.delete('/api/tenants/:id', async (req, res) => {
     try {
-        await client.execute('DELETE FROM tenants WHERE id = ?', [req.params.id]);
+        await dbQuery('DELETE FROM tenants WHERE id = ?', [req.params.id]);
         res.json({ success: true });
     } catch (err) { res.status(500).json(err); }
 });
@@ -118,7 +122,7 @@ app.delete('/api/tenants/:id', async (req, res) => {
 app.get('/api/vacancies', async (req, res) => {
     const { hostelId } = req.query;
     try {
-        const [rows] = await client.execute(`
+        const [rows] = await dbQuery(`
             SELECT id, hostel_id, room_number, sharing_type, DATE_FORMAT(available_from, '%Y-%m-%d') as available_from, 
             comments, status, booked_by, booked_phone, DATE_FORMAT(check_in_date, '%Y-%m-%d') as check_in_date 
             FROM vacancies WHERE hostel_id = ?`, [hostelId]);
@@ -129,7 +133,7 @@ app.get('/api/vacancies', async (req, res) => {
 app.post('/api/vacancies', async (req, res) => {
     const v = req.body;
     try {
-        const [result] = await client.execute(`
+        const [result] = await dbQuery(`
             INSERT INTO vacancies (hostel_id, room_number, sharing_type, available_from, comments, status)
             VALUES (?, ?, ?, ?, ?, 'AVAILABLE')`, 
             [v.hostelId, v.roomNumber, v.sharingType, v.availableFrom, v.comments]
@@ -142,11 +146,11 @@ app.put('/api/vacancies/:id', async (req, res) => {
     const v = req.body;
     try {
         if (v.status === 'BOOKED') {
-            await client.execute(`
+            await dbQuery(`
                 UPDATE vacancies SET status='BOOKED', booked_by=?, booked_phone=?, check_in_date=? 
                 WHERE id=?`, [v.bookedBy, v.bookedPhone, v.checkInDate, req.params.id]);
         } else if (v.status === 'AVAILABLE') {
-            await client.execute(`
+            await dbQuery(`
                 UPDATE vacancies SET status='AVAILABLE', booked_by=NULL, booked_phone=NULL, check_in_date=NULL 
                 WHERE id=?`, [req.params.id]);
         }
@@ -156,7 +160,7 @@ app.put('/api/vacancies/:id', async (req, res) => {
 
 app.delete('/api/vacancies/:id', async (req, res) => {
     try {
-        await client.execute('DELETE FROM vacancies WHERE id = ?', [req.params.id]);
+        await dbQuery('DELETE FROM vacancies WHERE id = ?', [req.params.id]);
         res.json({ success: true });
     } catch (err) { res.status(500).json(err); }
 });
@@ -165,7 +169,7 @@ app.delete('/api/vacancies/:id', async (req, res) => {
 app.get('/api/expenses', async (req, res) => {
     const { hostelId } = req.query;
     try {
-        const [rows] = await client.execute(`
+        const [rows] = await dbQuery(`
             SELECT id, hostel_id, title, amount, category, DATE_FORMAT(date, '%Y-%m-%d') as date 
             FROM expenses WHERE hostel_id = ?`, [hostelId]);
         res.json(rows.map(toCamel));
@@ -175,7 +179,7 @@ app.get('/api/expenses', async (req, res) => {
 app.post('/api/expenses', async (req, res) => {
     const e = req.body;
     try {
-        const [result] = awaitclient.execute(`
+        const [result] = await dbQuery(`
             INSERT INTO expenses (hostel_id, title, amount, date, category)
             VALUES (?, ?, ?, ?, ?)`, 
             [e.hostelId, e.title, e.amount, e.date, e.category]
@@ -188,5 +192,6 @@ app.listen(PORT, () => {
     console.log(`Yuvan Hostel API running on port ${PORT}`);
 
 });
+
 
 
