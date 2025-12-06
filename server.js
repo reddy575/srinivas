@@ -52,6 +52,7 @@ app.get('/api/hostels', async (req, res) => {
     try {
         const rows = await dbQuery('SELECT * FROM hostels');
         res.json(rows);
+       console.log(`testing ${ res.json(rows)}`);
     } catch (err) { res.status(500).json(err); }
 });
 
@@ -192,6 +193,7 @@ app.listen(PORT, () => {
     console.log(`Yuvan Hostel API running on port ${PORT}`);
 
 });
+
 
 
 
