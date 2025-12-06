@@ -20,7 +20,7 @@ async function dbQuery(sql, params = []) {
     const result = await client.execute(sql, params);
    console.log("testing", result);
   console.log("testing", result.rows);
-    return result.rows;
+    return result;
   } catch (err) {
     console.error("DB query error:", err);
     throw err;
@@ -204,6 +204,7 @@ app.listen(PORT, () => {
     console.log(`Yuvan Hostel API running on port ${PORT}`);
 
 });
+
 
 
 
