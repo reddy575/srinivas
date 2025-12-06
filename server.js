@@ -1,8 +1,11 @@
 const express = require('express');
-const mysql = require('mysql2/promise');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const mysql = require('@tidbcloud/serverless');
 
+const pool = mysql.createPool({
+  url: process.env.TIDB_URL,
+});
 const app = express();
 const PORT = 3000; // Ensure this matches the port in your Frontend Settings
 
@@ -10,16 +13,7 @@ const PORT = 3000; // Ensure this matches the port in your Frontend Settings
 app.use(cors());
 app.use(bodyParser.json());
 
-// Database Connection
-const pool = mysql.createPool({
-    host: 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com',
-    user: '3NaNjX1cVyBoyxD.root',      // Update with your MySQL username
-    password: '9NomCv8BOYL7oW9o', // Update with your MySQL password
-    database: 'yuvan_hostel_db',
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-});
+
 
 // Helper to format DB rows to Frontend CamelCase
 const toCamel = (row) => {
@@ -192,4 +186,5 @@ app.post('/api/expenses', async (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Yuvan Hostel API running on port ${PORT}`);
+
 });
