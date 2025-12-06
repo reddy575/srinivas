@@ -9,7 +9,8 @@
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "express": "^4.18.2",
-   "@tidbcloud/serverless": "^1.0.0",
+   "@tidbcloud/serverless": "^1.0.0"
   }
 
 }
+
