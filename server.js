@@ -35,7 +35,7 @@ const toCamel = (row) => {
 app.post('/api/auth/login', async (req, res) => {
     const { username, password } = req.body;
     try {
-        const [rows] = await dbQuery('SELECT * FROM users WHERE username = ? AND password = ?', [username, password]);
+        const rows = await dbQuery('SELECT * FROM users WHERE username = ? AND password = ?', [username, password]);
         if (rows.length > 0) {
             const user = rows[0];
             res.json({ username: user.username, role: user.role });
@@ -50,7 +50,7 @@ app.post('/api/auth/login', async (req, res) => {
 // 2. Hostels
 app.get('/api/hostels', async (req, res) => {
     try {
-        const [rows] = await dbQuery('SELECT * FROM hostels');
+        const rows = await dbQuery('SELECT * FROM hostels');
         res.json(rows);
     } catch (err) { res.status(500).json(err); }
 });
@@ -58,7 +58,7 @@ app.get('/api/hostels', async (req, res) => {
 app.post('/api/hostels', async (req, res) => {
     const { name, address } = req.body;
     try {
-        const [result] = await dbQuery('INSERT INTO hostels (name, address) VALUES (?, ?)', [name, address]);
+        const result = await dbQuery('INSERT INTO hostels (name, address) VALUES (?, ?)', [name, address]);
         res.json({ id: result.insertId, name, address });
     } catch (err) { res.status(500).json(err); }
 });
@@ -75,7 +75,7 @@ app.put('/api/hostels/:id', async (req, res) => {
 app.get('/api/tenants', async (req, res) => {
     const { hostelId } = req.query;
     try {
-        const [rows] = await dbQuery(`
+        const rows = await dbQuery(`
             SELECT id, hostel_id, name, room_number, phone_number, email, aadhar_number, 
             address, rent_amount, is_paid, collected_by, DATE_FORMAT(join_date, '%Y-%m-%d') as join_date 
             FROM tenants WHERE hostel_id = ?`, [hostelId]);
@@ -86,7 +86,7 @@ app.get('/api/tenants', async (req, res) => {
 app.post('/api/tenants', async (req, res) => {
     const t = req.body;
     try {
-        const [result] = await dbQuery(`
+        const result = await dbQuery(`
             INSERT INTO tenants (hostel_id, name, room_number, phone_number, email, aadhar_number, address, rent_amount, is_paid, join_date)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
             [t.hostelId, t.name, t.roomNumber, t.phoneNumber, t.email, t.aadharNumber, t.address, t.rentAmount, false, t.joinDate]
@@ -122,7 +122,7 @@ app.delete('/api/tenants/:id', async (req, res) => {
 app.get('/api/vacancies', async (req, res) => {
     const { hostelId } = req.query;
     try {
-        const [rows] = await dbQuery(`
+        const rows = await dbQuery(`
             SELECT id, hostel_id, room_number, sharing_type, DATE_FORMAT(available_from, '%Y-%m-%d') as available_from, 
             comments, status, booked_by, booked_phone, DATE_FORMAT(check_in_date, '%Y-%m-%d') as check_in_date 
             FROM vacancies WHERE hostel_id = ?`, [hostelId]);
@@ -133,7 +133,7 @@ app.get('/api/vacancies', async (req, res) => {
 app.post('/api/vacancies', async (req, res) => {
     const v = req.body;
     try {
-        const [result] = await dbQuery(`
+        const result = await dbQuery(`
             INSERT INTO vacancies (hostel_id, room_number, sharing_type, available_from, comments, status)
             VALUES (?, ?, ?, ?, ?, 'AVAILABLE')`, 
             [v.hostelId, v.roomNumber, v.sharingType, v.availableFrom, v.comments]
@@ -169,7 +169,7 @@ app.delete('/api/vacancies/:id', async (req, res) => {
 app.get('/api/expenses', async (req, res) => {
     const { hostelId } = req.query;
     try {
-        const [rows] = await dbQuery(`
+        const rows = await dbQuery(`
             SELECT id, hostel_id, title, amount, category, DATE_FORMAT(date, '%Y-%m-%d') as date 
             FROM expenses WHERE hostel_id = ?`, [hostelId]);
         res.json(rows.map(toCamel));
@@ -179,7 +179,7 @@ app.get('/api/expenses', async (req, res) => {
 app.post('/api/expenses', async (req, res) => {
     const e = req.body;
     try {
-        const [result] = await dbQuery(`
+        const result = await dbQuery(`
             INSERT INTO expenses (hostel_id, title, amount, date, category)
             VALUES (?, ?, ?, ?, ?)`, 
             [e.hostelId, e.title, e.amount, e.date, e.category]
@@ -192,6 +192,7 @@ app.listen(PORT, () => {
     console.log(`Yuvan Hostel API running on port ${PORT}`);
 
 });
+
 
 
 
