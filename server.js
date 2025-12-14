@@ -200,10 +200,34 @@ app.post('/api/expenses', async (req, res) => {
     } catch (err) { res.status(500).json(err); }
 });
 
+//Health Check
+app.get('/api/health', (req, res) => {
+
+    res.json({ message: "Health Check OK" });
+  
+});
+
+
+// SAVE Report (Upsert)
+app.post('/api/reports', async (req, res) => {
+    const { hostelId, month, reportData } = req.body;
+    try {
+        // Insert or Update (ON DUPLICATE KEY UPDATE)
+        const [result] = await pool.query(`
+            INSERT INTO monthly_reports (hostel_id, month, report_data) 
+            VALUES (?, ?, ?) 
+            ON DUPLICATE KEY UPDATE report_data = VALUES(report_data)`, 
+            [hostelId, month, JSON.stringify(reportData)]
+        );
+        res.json({ success: true });
+    } catch (err) { res.status(500).json(err); }
+});
+
 app.listen(PORT, () => {
     console.log(`Yuvan Hostel API running on port ${PORT}`);
 
 });
+
 
 
 
