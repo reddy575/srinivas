@@ -208,6 +208,20 @@ app.get('/api/health', (req, res) => {
 });
 
 
+
+// GET Report
+app.get('/api/reports', async (req, res) => {
+    const { hostelId, month } = req.query;
+    try {
+        const [rows] = await pool.query(
+            'SELECT * FROM monthly_reports WHERE hostel_id = ? AND month = ?', 
+            [hostelId, month]
+        );
+        res.json(rows[0] || null);
+    } catch (err) { res.status(500).json(err); }
+});
+
+
 // SAVE Report (Upsert)
 app.post('/api/reports', async (req, res) => {
     const { hostelId, month, reportData } = req.body;
@@ -227,6 +241,7 @@ app.listen(PORT, () => {
     console.log(`Yuvan Hostel API running on port ${PORT}`);
 
 });
+
 
 
 
